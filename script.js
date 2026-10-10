@@ -1231,72 +1231,58 @@ function renderAdminCars() {
    DELETE CAR
 ========================================================= */
 
+function deleteCar(id) {
 
-async function deleteCar(id) {
-    const car = cars.find(item => Number(item.id) === Number(id));
+    const car =
+        cars.find(item => item.id === id);
+
+
     if (!car) return;
 
-    if (!car._cloud) {
-        showToast("This is not an uploaded cloud listing.");
+    if (car._cloud) {
+        showToast("Cloud listing deletion needs secure admin permissions. It has not been deleted.");
         return;
     }
 
-    if (!confirm(`Delete ${car.name} and all its details?`)) return;
+    const confirmed =
+        confirm(
+            `Delete ${car.name} from Drive Market?`
+        );
 
-    try {
-        // Delete the car record and all its details from Supabase.
-        const { data, error } = await supabaseClient
-            .from("cars")
-            .delete()
-            .eq("id", id)
-            .select("id, image");
 
-        if (error) throw error;
+    if (!confirmed) return;
 
-        if (!data || data.length === 0) {
-            showToast("Deletion denied by Supabase permissions.");
-            return;
-        }
 
-        // Delete the associated uploaded photo.
-        const imageUrl = data[0].image;
+    cars =
+        cars.filter(item => item.id !== id);
 
-        if (imageUrl) {
-            const marker = "/storage/v1/object/public/car-photos/";
-            const imagePath = imageUrl.split(marker)[1];
 
-            if (imagePath) {
-                const { error: storageError } = await supabaseClient
-                    .storage
-                    .from("car-photos")
-                    .remove([decodeURIComponent(imagePath)]);
+    wishlist =
+        wishlist.filter(item => item !== id);
 
-                if (storageError) {
-                    console.error("Photo storage deletion failed:", storageError);
-                }
-            }
-        }
 
-        // Update the website after successful database deletion.
-        cars = cars.filter(item => Number(item.id) !== Number(id));
-        wishlist = wishlist.filter(item => Number(item) !== Number(id));
+    saveCars();
 
-        saveCars();
-        saveWishlist();
-        renderCars();
-        renderFeaturedCars();
-        renderAdminCars();
-        updateStats();
-        updateWishlistCount();
-        updateAdminStats();
+    saveWishlist();
 
-        showToast("Car listing and details deleted successfully.");
 
-    } catch (error) {
-        console.error("Car deletion failed:", error);
-        showToast("Could not delete listing. Check Supabase permissions.");
-    }
+    renderCars();
+
+    renderFeaturedCars();
+
+    renderAdminCars();
+
+    updateStats();
+
+    updateWishlistCount();
+
+    updateAdminStats();
+
+
+    showToast("Car deleted successfully.");
+
 }
+
 
 /* =========================================================
    ADMIN LOGOUT
