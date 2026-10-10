@@ -10,7 +10,7 @@
    NEVER put a service_role or secret key in browser code.
 ========================================================= */
 
-const SUPABASE_URL = "https://ddulammxpjfalnllaxcj.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://ddulammxpjfalnllaxcj.supabase.co";
 const SUPABASE_PUBLIC_KEY = "sb_publishable_HxsFsDURNRrwI3uBd9gIwg_PXrNBavW";
 
 const SUPABASE_CONFIGURED =
