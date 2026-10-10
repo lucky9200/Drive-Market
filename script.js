@@ -5,9 +5,6 @@
 
 /* =========================================================
    SUPABASE CLOUD SETTINGS
-   Replace both values with your own Supabase project details.
-   Use the Project URL and the publishable/anon public key only.
-   NEVER put a service_role or secret key in browser code.
 ========================================================= */
 
 const SUPABASE_URL = "https://ddulammxpjfalnllaxcj.supabase.co";
@@ -21,65 +18,38 @@ const supabaseClient = SUPABASE_CONFIGURED && window.supabase
     ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY)
     : null;
 
-
 /* =========================================================
    DEFAULT CAR DATA
 ========================================================= */
 
-const defaultCars = [
-
-
-];
-
+const defaultCars = [];
 
 /* =========================================================
    LOCAL STORAGE
 ========================================================= */
 
-// The cloud database is the shared source of truth for newly listed cars.
-// Start with the built-in sample cars; loadCloudCars() adds cloud listings.
 let cars = [...defaultCars];
 
 let wishlist =
-    JSON.parse(localStorage.getItem("driveMarketWishlist"))
-    || [];
+    JSON.parse(localStorage.getItem("driveMarketWishlist")) || [];
 
 let adminLoggedIn = false;
-
 
 /* =========================================================
    PAGE SECTION NAVIGATION
 ========================================================= */
 
-/*
-    THIS IS THE MAIN NEW FEATURE.
-
-    When user clicks:
-
-    Home      -> Only Home is shown
-    Buy Cars  -> Only Cars is shown
-    Sell Car  -> Only Sell is shown
-    Brands    -> Only Brands is shown
-    About     -> Only About is shown
-
-    Other sections are hidden.
-*/
-
 function showSection(sectionName) {
-
     const sections = document.querySelectorAll(".page-section");
 
     sections.forEach(section => {
         section.classList.remove("active");
     });
 
-
     const selectedSection =
         document.getElementById(sectionName + "Section");
 
-
     if (selectedSection) {
-
         selectedSection.classList.add("active");
 
         window.scrollTo({
@@ -88,104 +58,78 @@ function showSection(sectionName) {
         });
     }
 
-
-    /* Update active navbar */
-
     const navLinks =
         document.querySelectorAll(".nav-links a[data-section]");
 
     navLinks.forEach(link => {
-
         link.classList.remove("active");
 
         if (link.dataset.section === sectionName) {
             link.classList.add("active");
         }
-
     });
 
-
-    /* Update browser URL */
-
     try {
-
-        history.replaceState(
-            null,
-            "",
-            "#" + sectionName
-        );
-
+        history.replaceState(null, "", "#" + sectionName);
     } catch (error) {
         console.log(error);
     }
-
-
-    /* If cars section opens */
 
     if (sectionName === "cars") {
         renderCars();
     }
 
-
     closeMobileMenu();
 }
-
-
-/* Logo/Home helper */
 
 function showHome() {
     showSection("home");
 }
-
 
 /* =========================================================
    INITIAL PAGE
 ========================================================= */
 
 document.addEventListener("DOMContentLoaded", async () => {
-
     setupImagePreview();
 
-    // Load listings shared by every device from Supabase.
     await loadCloudCars();
 
     updateWishlistCount();
     updateAdminStats();
 
-    /* Always start with Home */
     showSection("home");
-
 });
-
 
 /* =========================================================
    FORMAT PRICE
 ========================================================= */
 
 function formatPrice(price) {
-
     return new Intl.NumberFormat("en-IN", {
         style: "currency",
         currency: "INR",
         maximumFractionDigits: 0
     }).format(price);
-
 }
 
-
 /* =========================================================
-   SAVE DATA
+   LOAD CLOUD CARS
 ========================================================= */
 
 async function loadCloudCars() {
-
     if (!SUPABASE_CONFIGURED || !supabaseClient) {
-        console.warn("Drive Market cloud is not configured yet. Add your Supabase URL and public key in script.js.");
+        console.warn(
+            "Drive Market cloud is not configured. Check Supabase settings."
+        );
+
         cars = [...defaultCars];
+
         renderCars();
         renderFeaturedCars();
         updateStats();
         updateAdminStats();
+
         return;
     }
 
@@ -196,11 +140,14 @@ async function loadCloudCars() {
 
     if (error) {
         console.error("Could not load cloud car listings:", error);
+
         cars = [...defaultCars];
+
         renderCars();
         renderFeaturedCars();
         updateStats();
         updateAdminStats();
+
         showToast("Online listings could not load. Check Supabase settings.");
         return;
     }
@@ -214,52 +161,40 @@ async function loadCloudCars() {
         _cloud: true
     }));
 
-    // Cloud listings appear first; built-in sample listings remain available.
     cars = [...cloudCars, ...defaultCars];
 
     renderCars();
     renderFeaturedCars();
     updateStats();
     updateAdminStats();
-
 }
 
 function saveCars() {
-
-    // Kept for the existing local-only sample-car admin behavior.
     localStorage.setItem(
         "driveMarketCars",
         JSON.stringify(cars.filter(car => !car._cloud))
     );
-
 }
 
-
 function saveWishlist() {
-
     localStorage.setItem(
         "driveMarketWishlist",
         JSON.stringify(wishlist)
     );
-
 }
-
 
 /* =========================================================
    IMAGE
 ========================================================= */
 
 function getCarImage(car) {
-
     if (car.image) {
-
         return `
             <img
                 src="${car.image}"
                 alt="${escapeHTML(car.name)}"
             >
         `;
-
     }
 
     return `
@@ -267,16 +202,13 @@ function getCarImage(car) {
             🚘
         </div>
     `;
-
 }
-
 
 /* =========================================================
    ESCAPE HTML
 ========================================================= */
 
 function escapeHTML(value) {
-
     if (!value) return "";
 
     return String(value)
@@ -285,25 +217,18 @@ function escapeHTML(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-
 }
-
 
 /* =========================================================
    RENDER CAR CARD
 ========================================================= */
 
 function carCard(car) {
-
-    const isWishlisted =
-        wishlist.includes(car.id);
+    const isWishlisted = wishlist.includes(car.id);
 
     return `
-
         <article class="car-card">
-
             <div class="car-image">
-
                 ${getCarImage(car)}
 
                 <span class="car-badge">
@@ -317,48 +242,27 @@ function carCard(car) {
                 >
                     ${isWishlisted ? "♥" : "♡"}
                 </button>
-
             </div>
 
-
             <div class="car-content">
-
-                <h3>
-                    ${escapeHTML(car.name)}
-                </h3>
+                <h3>${escapeHTML(car.name)}</h3>
 
                 <div class="car-brand">
                     ${escapeHTML(car.brand)}
                 </div>
 
-
                 <div class="car-price">
                     ${formatPrice(car.price)}
                 </div>
 
-
                 <div class="car-meta">
-
-                    <span>
-                        ⛽ ${escapeHTML(car.fuel)}
-                    </span>
-
-                    <span>
-                        ⚙ ${escapeHTML(car.transmission)}
-                    </span>
-
-                    <span>
-                        📍 ${escapeHTML(car.location || "India")}
-                    </span>
-
+                    <span>⛽ ${escapeHTML(car.fuel)}</span>
+                    <span>⚙ ${escapeHTML(car.transmission)}</span>
+                    <span>📍 ${escapeHTML(car.location || "India")}</span>
                 </div>
 
-
                 <div class="car-actions">
-
-                    <button
-                        onclick="showCarDetails(${car.id})"
-                    >
+                    <button onclick="showCarDetails(${car.id})">
                         View Details
                     </button>
 
@@ -368,285 +272,171 @@ function carCard(car) {
                     >
                         Buy / Enquire
                     </button>
-
                 </div>
-
             </div>
-
         </article>
-
     `;
-
 }
-
 
 /* =========================================================
    RENDER ALL CARS
 ========================================================= */
 
 function renderCars(list = cars) {
-
-    const grid =
-        document.getElementById("carsGrid");
+    const grid = document.getElementById("carsGrid");
 
     if (!grid) return;
 
-
     if (list.length === 0) {
-
         grid.innerHTML = `
-
             <div class="empty-state">
-
                 <strong>No Cars Found</strong>
-
-                <span>
-                    Try changing your search or filters.
-                </span>
-
+                <span>Try changing your search or filters.</span>
             </div>
-
         `;
-
     } else {
-
-        grid.innerHTML =
-            list.map(carCard).join("");
-
+        grid.innerHTML = list.map(carCard).join("");
     }
 
-
-    const count =
-        document.getElementById("resultsCount");
+    const count = document.getElementById("resultsCount");
 
     if (count) {
-
         count.textContent =
             `${list.length} car${list.length !== 1 ? "s" : ""} found`;
-
     }
-
 }
-
 
 /* =========================================================
    FEATURED CARS
 ========================================================= */
 
 function renderFeaturedCars() {
-
-    const container =
-        document.getElementById("featuredCars");
+    const container = document.getElementById("featuredCars");
 
     if (!container) return;
 
+    const featured = cars.slice(0, 3);
 
-    const featured =
-        cars.slice(0, 3);
-
-    container.innerHTML =
-        featured.map(carCard).join("");
-
+    container.innerHTML = featured.map(carCard).join("");
 }
-
 
 /* =========================================================
    FILTER CARS
 ========================================================= */
 
 function filterCars() {
+    const search = document
+        .getElementById("searchInput")
+        .value
+        .toLowerCase()
+        .trim();
 
-    const search =
-        document
-            .getElementById("searchInput")
-            .value
-            .toLowerCase()
-            .trim();
+    const brand = document.getElementById("brandFilter").value;
+    const fuel = document.getElementById("fuelFilter").value;
+    const price = document.getElementById("priceFilter").value;
 
+    const maxPrice = price ? Number(price) : Infinity;
 
-    const brand =
-        document.getElementById("brandFilter").value;
+    const filtered = cars.filter(car => {
+        const matchesSearch =
+            !search ||
+            car.name.toLowerCase().includes(search) ||
+            car.brand.toLowerCase().includes(search);
 
+        const matchesBrand = !brand || car.brand === brand;
+        const matchesFuel = !fuel || car.fuel === fuel;
+        const matchesPrice = car.price <= maxPrice;
 
-    const fuel =
-        document.getElementById("fuelFilter").value;
-
-
-    const price =
-        document.getElementById("priceFilter").value;
-
-
-    const maxPrice =
-        price ? Number(price) : Infinity;
-
-
-    const filtered =
-        cars.filter(car => {
-
-            const matchesSearch =
-                !search ||
-                car.name.toLowerCase().includes(search) ||
-                car.brand.toLowerCase().includes(search);
-
-
-            const matchesBrand =
-                !brand ||
-                car.brand === brand;
-
-
-            const matchesFuel =
-                !fuel ||
-                car.fuel === fuel;
-
-
-            const matchesPrice =
-                car.price <= maxPrice;
-
-
-            return (
-                matchesSearch &&
-                matchesBrand &&
-                matchesFuel &&
-                matchesPrice
-            );
-
-        });
-
+        return (
+            matchesSearch &&
+            matchesBrand &&
+            matchesFuel &&
+            matchesPrice
+        );
+    });
 
     renderCars(filtered);
-
 }
-
-
 /* =========================================================
    RESET FILTERS
 ========================================================= */
 
 function resetFilters() {
-
     document.getElementById("searchInput").value = "";
-
     document.getElementById("brandFilter").value = "";
-
     document.getElementById("fuelFilter").value = "";
-
     document.getElementById("priceFilter").value = "";
 
     renderCars();
-
 }
-
 
 /* =========================================================
    HERO SEARCH
 ========================================================= */
 
 function searchFromHero() {
-
-    const value =
-        document
-            .getElementById("heroSearch")
-            .value
-            .trim();
-
+    const value = document
+        .getElementById("heroSearch")
+        .value
+        .trim();
 
     showSection("cars");
 
-
-    document.getElementById("searchInput").value =
-        value;
-
+    document.getElementById("searchInput").value = value;
 
     filterCars();
-
 }
-
 
 function heroSearchCars(event) {
-
     if (event.key === "Enter") {
-
         searchFromHero();
-
     }
-
 }
-
 
 /* =========================================================
    BRAND SEARCH
 ========================================================= */
 
 function selectBrand(brand) {
-
     showSection("cars");
 
-
-    document.getElementById("brandFilter").value =
-        brand;
-
-
-    document.getElementById("searchInput").value =
-        "";
-
-
-    document.getElementById("fuelFilter").value =
-        "";
-
-
-    document.getElementById("priceFilter").value =
-        "";
-
+    document.getElementById("brandFilter").value = brand;
+    document.getElementById("searchInput").value = "";
+    document.getElementById("fuelFilter").value = "";
+    document.getElementById("priceFilter").value = "";
 
     filterCars();
-
 }
-
 
 /* =========================================================
    CAR DETAILS
 ========================================================= */
 
 function showCarDetails(id) {
-
-    const car =
-        cars.find(item => item.id === id);
+    const car = cars.find(item => item.id === id);
 
     if (!car) return;
 
-
-    const content =
-        document.getElementById("carDetailsContent");
-
+    const content = document.getElementById("carDetailsContent");
 
     content.innerHTML = `
-
         <div class="details-layout">
-
             <div class="details-image">
-
                 ${getCarImage(car)}
-
             </div>
 
-
             <div class="details-info">
-
                 <span class="small-title">
                     ${escapeHTML(car.brand)}
                 </span>
 
-                <h2>
-                    ${escapeHTML(car.name)}
-                </h2>
+                <h2>${escapeHTML(car.name)}</h2>
 
                 <div class="details-price">
                     ${formatPrice(car.price)}
                 </div>
 
-
                 <div class="details-meta">
-
                     <div>
                         <strong>Year</strong>
                         <span>${car.year}</span>
@@ -671,19 +461,15 @@ function showCarDetails(id) {
                         <strong>Location</strong>
                         <span>${escapeHTML(car.location || "India")}</span>
                     </div>
-
                 </div>
-
 
                 <h4>Description</h4>
 
                 <p style="color:#64748b; margin:8px 0 20px;">
                     ${escapeHTML(
-                        car.description ||
-                        "No description available."
+                        car.description || "No description available."
                     )}
                 </p>
-
 
                 <button
                     class="primary-btn full-btn"
@@ -691,191 +477,125 @@ function showCarDetails(id) {
                 >
                     Buy / Send Enquiry
                 </button>
-
             </div>
-
         </div>
-
     `;
 
-
     openModal("carDetailsModal");
-
 }
-
 
 /* =========================================================
    WISHLIST
 ========================================================= */
 
 function toggleWishlist(id) {
-
     if (wishlist.includes(id)) {
-
-        wishlist =
-            wishlist.filter(item => item !== id);
-
+        wishlist = wishlist.filter(item => item !== id);
         showToast("Removed from wishlist");
-
     } else {
-
         wishlist.push(id);
-
         showToast("Added to wishlist");
-
     }
-
 
     saveWishlist();
-
     updateWishlistCount();
-
     renderCars();
-
     renderFeaturedCars();
-
 }
-
 
 function updateWishlistCount() {
-
-    const count =
-        document.getElementById("wishlistCount");
+    const count = document.getElementById("wishlistCount");
 
     if (count) {
-
-        count.textContent =
-            wishlist.length;
-
+        count.textContent = wishlist.length;
     }
-
 }
-
 
 /* =========================================================
    WISHLIST MODAL
 ========================================================= */
 
 function openWishlist() {
+    const container = document.getElementById("wishlistContent");
 
-    const container =
-        document.getElementById("wishlistContent");
-
-
-    const wishlistCars =
-        cars.filter(car =>
-            wishlist.includes(car.id)
-        );
-
+    const wishlistCars = cars.filter(car =>
+        wishlist.includes(car.id)
+    );
 
     if (wishlistCars.length === 0) {
-
         container.innerHTML = `
-
             <div class="empty-state">
-
                 <strong>Your Wishlist is Empty</strong>
-
-                <span>
-                    Click ♡ on any car to save it here.
-                </span>
-
+                <span>Click ♡ on any car to save it here.</span>
             </div>
-
         `;
-
     } else {
-
-        container.innerHTML =
-            wishlistCars.map(carCard).join("");
-
+        container.innerHTML = wishlistCars.map(carCard).join("");
     }
 
-
     openModal("wishlistModal");
-
 }
-
 
 /* =========================================================
    PURCHASE MODAL
 ========================================================= */
 
 function openPurchaseModal(id) {
-
-    const car =
-        cars.find(item => item.id === id);
+    const car = cars.find(item => item.id === id);
 
     if (!car) return;
 
-
-    document.getElementById("purchaseCarId").value =
-        id;
-
+    document.getElementById("purchaseCarId").value = id;
 
     document.getElementById("buyerMessage").value =
         `I am interested in purchasing the ${car.name}. Please contact me with more details.`;
 
-
     openModal("purchaseModal");
-
 }
-
 
 document
     .getElementById("purchaseForm")
     ?.addEventListener("submit", function(event) {
-
         event.preventDefault();
 
+        const carId = Number(
+            document.getElementById("purchaseCarId").value
+        );
 
-        const carId =
-            Number(
-                document.getElementById("purchaseCarId").value
-            );
-
-
-        const car =
-            cars.find(item => item.id === carId);
-
+        const car = cars.find(item => item.id === carId);
 
         showToast(
             `Purchase request sent for ${car ? car.name : "car"}!`
         );
 
-
         this.reset();
-
         closeModal("purchaseModal");
-
     });
-
 
 /* =========================================================
    SELL CAR
 ========================================================= */
 
 function openSellModal() {
-
     openModal("sellModal");
-
 }
-
 
 document
     .getElementById("sellForm")
     ?.addEventListener("submit", async function(event) {
-
         event.preventDefault();
 
         if (!SUPABASE_CONFIGURED || !supabaseClient) {
-            showToast("Cloud setup is not finished. Add your Supabase URL and public key in script.js.");
+            showToast(
+                "Cloud setup is not finished. Add your Supabase URL and public key in script.js."
+            );
             return;
         }
 
         const form = this;
         const submitButton = form.querySelector('button[type="submit"]');
         const originalButtonText = submitButton.textContent;
+
         submitButton.disabled = true;
         submitButton.textContent = "Uploading...";
 
@@ -896,10 +616,13 @@ document
                 throw new Error("Please select an image smaller than 5 MB.");
             }
 
-            const safeFileName = imageFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+            const safeFileName = imageFile.name.replace(
+                /[^a-zA-Z0-9._-]/g,
+                "_"
+            );
+
             uploadedPath = `${Date.now()}-${safeFileName}`;
 
-            // Upload the photo file to shared Supabase Storage.
             const { error: uploadError } = await supabaseClient
                 .storage
                 .from("car-photos")
@@ -924,17 +647,19 @@ document
                 fuel: document.getElementById("sellFuel").value,
                 transmission: document.getElementById("sellTransmission").value,
                 km: Number(document.getElementById("sellKm").value) || 0,
-                location: document.getElementById("sellLocation").value.trim() || "India",
+                location:
+                    document.getElementById("sellLocation").value.trim() || "India",
                 image: publicImageData.publicUrl,
-                description: document.getElementById("sellDescription").value.trim()
+                description:
+                    document.getElementById("sellDescription").value.trim()
             };
 
-            // Save car details and the public image URL in the cloud database.
-            const { data: savedCar, error: insertError } = await supabaseClient
-                .from("cars")
-                .insert(newCar)
-                .select()
-                .single();
+            const { data: savedCar, error: insertError } =
+                await supabaseClient
+                    .from("cars")
+                    .insert(newCar)
+                    .select()
+                    .single();
 
             if (insertError) throw insertError;
 
@@ -958,467 +683,380 @@ document
 
             showToast("Car listed online successfully!");
             showSection("cars");
-
         } catch (error) {
             console.error("Car upload failed:", error);
-            showToast(error.message || "Could not upload the car. Check Supabase setup and policies.");
 
+            showToast(
+                error.message ||
+                "Could not upload the car. Check Supabase setup and policies."
+            );
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = originalButtonText;
         }
-
     });
-
 
 /* =========================================================
    IMAGE TO BASE64
 ========================================================= */
 
 function convertImageToBase64(file) {
-
     return new Promise((resolve, reject) => {
+        const reader = new FileReader();
 
-        const reader =
-            new FileReader();
-
-        reader.onload =
-            () => resolve(reader.result);
-
-        reader.onerror =
-            reject;
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
 
         reader.readAsDataURL(file);
-
     });
-
 }
-
 
 /* =========================================================
    IMAGE PREVIEW
 ========================================================= */
 
 function setupImagePreview() {
-
-    const input =
-        document.getElementById("sellImage");
+    const input = document.getElementById("sellImage");
 
     if (!input) return;
 
-
     input.addEventListener("change", function() {
-
         const file = this.files[0];
-
-        const preview =
-            document.getElementById("imagePreview");
-
+        const preview = document.getElementById("imagePreview");
 
         if (!file) {
-
             preview.innerHTML = "";
-
             return;
-
         }
 
+        const reader = new FileReader();
 
-        const reader =
-            new FileReader();
-
-
-        reader.onload =
-            function(event) {
-
-                preview.innerHTML = `
-
-                    <img
-                        src="${event.target.result}"
-                        alt="Car Preview"
-                    >
-
-                `;
-
-            };
-
+        reader.onload = function(event) {
+            preview.innerHTML = `
+                <img
+                    src="${event.target.result}"
+                    alt="Car Preview"
+                >
+            `;
+        };
 
         reader.readAsDataURL(file);
-
     });
-
 }
-
-
 /* =========================================================
    ADMIN LOGIN
 ========================================================= */
 
 function openAdminLogin() {
-
     if (adminLoggedIn) {
-
         openAdminDashboard();
-
         return;
-
     }
 
-
     openModal("adminLoginModal");
-
 }
-
 
 document
     .getElementById("adminLoginForm")
     ?.addEventListener("submit", function(event) {
-
         event.preventDefault();
-
 
         const username =
             document.getElementById("adminUsername").value.trim();
 
-
         const password =
             document.getElementById("adminPassword").value;
-
 
         if (
             (username === "Lucky" && password === "Lucky@123") ||
             (username === "Deepanshu" && password === "Deepanshu@123") ||
             (username === "Dhiraj" && password === "Dhiraj@123")
-
         ) {
-
             adminLoggedIn = true;
 
-
             closeModal("adminLoginModal");
-
             openAdminDashboard();
 
             this.reset();
 
             showToast("Admin login successful!");
-
         } else {
-
-            showToast(
-                "Invalid username or password"
-            );
-
+            showToast("Invalid username or password");
         }
-
     });
-
 
 /* =========================================================
    ADMIN DASHBOARD
 ========================================================= */
 
 function openAdminDashboard() {
-
     renderAdminCars();
-
     updateAdminStats();
-
     openModal("adminModal");
-
 }
-
 
 function updateAdminStats() {
-
-    const count =
-        document.getElementById("adminCarCount");
-
-    const wishlistCount =
-        document.getElementById("adminWishlistCount");
-
+    const count = document.getElementById("adminCarCount");
+    const wishlistCount = document.getElementById("adminWishlistCount");
 
     if (count) {
-
-        count.textContent =
-            cars.length;
-
+        count.textContent = cars.length;
     }
-
 
     if (wishlistCount) {
-
-        wishlistCount.textContent =
-            wishlist.length;
-
+        wishlistCount.textContent = wishlist.length;
     }
-
 }
-
 
 /* =========================================================
    ADMIN CAR LIST
 ========================================================= */
 
 function renderAdminCars() {
-
-    const container =
-        document.getElementById("adminCarsList");
+    const container = document.getElementById("adminCarsList");
 
     if (!container) return;
 
-
     if (cars.length === 0) {
-
         container.innerHTML = `
-
             <div class="empty-state">
                 No cars available.
             </div>
-
         `;
-
         return;
-
     }
 
-
-    container.innerHTML =
-        cars.map(car => `
-
-            <div class="admin-car-item">
-
-                <div class="admin-car-left">
-
-                    <div class="admin-car-image">
-
-                        ${getCarImage(car)}
-
-                    </div>
-
-                    <div>
-
-                        <strong>
-                            ${escapeHTML(car.name)}
-                        </strong>
-
-                        <small>
-                            ${escapeHTML(car.brand)}
-                            •
-                            ${formatPrice(car.price)}
-                        </small>
-
-                    </div>
-
+    container.innerHTML = cars.map(car => `
+        <div class="admin-car-item">
+            <div class="admin-car-left">
+                <div class="admin-car-image">
+                    ${getCarImage(car)}
                 </div>
 
+                <div>
+                    <strong>${escapeHTML(car.name)}</strong>
 
-                <button
-                    class="danger-btn"
-                    onclick="deleteCar(${car.id})"
-                >
-                    Delete
-                </button>
-
+                    <small>
+                        ${escapeHTML(car.brand)}
+                        •
+                        ${formatPrice(car.price)}
+                    </small>
+                </div>
             </div>
 
-        `).join("");
-
+            <button
+                class="danger-btn"
+                onclick="deleteCar(${car.id})"
+            >
+                Delete
+            </button>
+        </div>
+    `).join("");
 }
 
-
 /* =========================================================
-   DELETE CAR
+   DELETE CAR AND PHOTO
 ========================================================= */
 
-function deleteCar(id) {
-
-    const car =
-        cars.find(item => item.id === id);
-
+async function deleteCar(id) {
+    const car = cars.find(
+        item => Number(item.id) === Number(id)
+    );
 
     if (!car) return;
 
-    if (car._cloud) {
-        showToast("Cloud listing deletion needs secure admin permissions. It has not been deleted.");
-        return;
-    }
-
-    const confirmed =
-        confirm(
-            `Delete ${car.name} from Drive Market?`
-        );
-
+    const confirmed = confirm(
+        `Delete ${car.name} and its photo from Drive Market?`
+    );
 
     if (!confirmed) return;
 
+    if (car._cloud) {
+        if (!supabaseClient) {
+            showToast("Supabase is not configured.");
+            return;
+        }
 
-    cars =
-        cars.filter(item => item.id !== id);
+        try {
+            // First, delete the listing from the database.
+            const { data, error } = await supabaseClient
+                .from("cars")
+                .delete()
+                .eq("id", car.id)
+                .select("id");
 
+            if (error) throw error;
 
-    wishlist =
-        wishlist.filter(item => item !== id);
+            if (!data || data.length === 0) {
+                throw new Error(
+                    "No listing was deleted. Check the cars table DELETE policy."
+                );
+            }
 
+            // Then remove the photo from the car-photos Storage bucket.
+            if (car.image) {
+                const publicMarker =
+                    "/storage/v1/object/public/car-photos/";
+
+                const imageURL = new URL(
+                    car.image,
+                    window.location.href
+                );
+
+                const markerIndex =
+                    imageURL.pathname.indexOf(publicMarker);
+
+                if (markerIndex !== -1) {
+                    const encodedPath = imageURL.pathname.slice(
+                        markerIndex + publicMarker.length
+                    );
+
+                    const imagePath = encodedPath
+                        .split("/")
+                        .map(part => decodeURIComponent(part))
+                        .join("/");
+
+                    if (imagePath) {
+                        const { error: photoError } =
+                            await supabaseClient
+                                .storage
+                                .from("car-photos")
+                                .remove([imagePath]);
+
+                        if (photoError) {
+                            console.error(
+                                "Listing deleted, but photo removal failed:",
+                                photoError
+                            );
+
+                            showToast(
+                                "Car deleted, but its photo could not be removed. Check Storage DELETE policy."
+                            );
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Cloud deletion failed:", error);
+
+            showToast(
+                error.message ||
+                "Could not delete cloud listing. Check Supabase policies."
+            );
+
+            return;
+        }
+    }
+
+    // Update the page after deletion.
+    cars = cars.filter(
+        item => Number(item.id) !== Number(id)
+    );
+
+    wishlist = wishlist.filter(
+        item => Number(item) !== Number(id)
+    );
 
     saveCars();
-
     saveWishlist();
 
-
     renderCars();
-
     renderFeaturedCars();
-
     renderAdminCars();
 
     updateStats();
-
     updateWishlistCount();
-
     updateAdminStats();
 
-
     showToast("Car deleted successfully.");
-
 }
-
 
 /* =========================================================
    ADMIN LOGOUT
 ========================================================= */
 
 function adminLogout() {
-
     adminLoggedIn = false;
 
     closeModal("adminModal");
 
     showToast("Admin logged out.");
-
 }
-
 
 /* =========================================================
    STATS
 ========================================================= */
 
 function updateStats() {
-
-    const total =
-        document.getElementById("totalCarsStat");
+    const total = document.getElementById("totalCarsStat");
 
     if (total) {
-
-        total.textContent =
-            cars.length;
-
+        total.textContent = cars.length;
     }
-
 }
-
 
 /* =========================================================
    MODALS
 ========================================================= */
 
 function openModal(id) {
-
-    const modal =
-        document.getElementById(id);
+    const modal = document.getElementById(id);
 
     if (modal) {
-
         modal.classList.add("show");
-
-        document.body.style.overflow =
-            "hidden";
-
+        document.body.style.overflow = "hidden";
     }
-
 }
-
 
 function closeModal(id) {
-
-    const modal =
-        document.getElementById(id);
+    const modal = document.getElementById(id);
 
     if (modal) {
-
         modal.classList.remove("show");
-
-        document.body.style.overflow =
-            "";
-
+        document.body.style.overflow = "";
     }
-
 }
-
 
 /* Close modal by clicking outside */
 
 document.addEventListener("click", function(event) {
-
     if (event.target.classList.contains("modal")) {
-
         event.target.classList.remove("show");
-
         document.body.style.overflow = "";
-
     }
-
 });
-
 
 /* ESC key */
 
 document.addEventListener("keydown", function(event) {
-
     if (event.key === "Escape") {
-
         document
             .querySelectorAll(".modal.show")
             .forEach(modal => {
-
                 modal.classList.remove("show");
-
             });
 
-
         document.body.style.overflow = "";
-
     }
-
 });
-
 
 /* =========================================================
    MOBILE MENU
 ========================================================= */
 
 function toggleMobileMenu() {
-
     document
         .getElementById("mobileMenu")
         .classList.toggle("open");
-
 }
-
 
 function closeMobileMenu() {
-
-    const menu =
-        document.getElementById("mobileMenu");
+    const menu = document.getElementById("mobileMenu");
 
     if (menu) {
-
         menu.classList.remove("open");
-
     }
-
 }
-
 
 /* =========================================================
    TOAST
@@ -1426,28 +1064,17 @@ function closeMobileMenu() {
 
 let toastTimer;
 
-
 function showToast(message) {
+    const toast = document.getElementById("toast");
 
-    const toast =
-        document.getElementById("toast");
+    if (!toast) return;
 
-
-    toast.textContent =
-        message;
-
-
+    toast.textContent = message;
     toast.classList.add("show");
-
 
     clearTimeout(toastTimer);
 
-
-    toastTimer =
-        setTimeout(() => {
-
-            toast.classList.remove("show");
-
-        }, 3000);
-
+    toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3000);
 }
