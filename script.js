@@ -1239,10 +1239,7 @@ function deleteCar(id) {
 
     if (!car) return;
 
-    if (car._cloud) {
-        showToast("Cloud listing deletion needs secure admin permissions. It has not been deleted.");
-        return;
-    }
+    
 
     const confirmed =
         confirm(
